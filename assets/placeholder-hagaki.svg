@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 444" role="img" aria-label="ハガキサイズ命名書の見本写真（準備中）">
+  <rect width="300" height="444" fill="#fbfaf5"/>
+  <rect x="10" y="10" width="280" height="424" fill="none" stroke="#dcd8cc" stroke-width="2"/>
+  <text x="150" y="130" text-anchor="middle" font-size="34" fill="#161513" font-family="serif">命名</text>
+  <text x="150" y="240" text-anchor="middle" font-size="52" fill="#161513" font-family="serif">花</text>
+  <text x="150" y="400" text-anchor="middle" font-size="13" fill="#8a867c" font-family="sans-serif" letter-spacing="2">見本写真は準備中です</text>
+</svg>

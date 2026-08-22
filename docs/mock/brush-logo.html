@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>筆書きロゴ・モック｜ちいさな手Saki</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Shippori+Mincho+B1:wght@700&family=Yuji+Syuku&family=Zen+Kaku+Gothic+Antique:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --paper: #f1f0eb;
+  --ink: #161513;
+  --ink-soft: #55524b;
+  --accent: #a63e2c;
+  --gothic: "Zen Kaku Gothic Antique", sans-serif;
+  --mincho: "Shippori Mincho B1", serif;
+  --brush-font: "Yuji Syuku", serif;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: var(--gothic);
+  background: var(--paper);
+  color: var(--ink);
+  min-height: 100svh;
+  display: grid;
+  place-items: center;
+  letter-spacing: 0.12em;
+  overflow-x: hidden;
+}
+body::before {
+  content: ""; position: fixed; inset: 0; z-index: 40; pointer-events: none;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/></filter><rect width='160' height='160' filter='url(%23n)' opacity='0.55'/></svg>");
+  opacity: 0.05;
+}
+.stage { text-align: center; padding: 40px 20px 120px; }
+.mock-note { font-size: 11px; letter-spacing: 0.3em; color: var(--ink-soft); margin-bottom: 48px; }
+
+/* ===== 本番と同じロゴ構造 ===== */
+.hero-logo {
+  position: relative;
+  display: inline-block;
+  writing-mode: vertical-rl;
+  text-align: initial;
+}
+.logo-sub {
+  font-family: var(--mincho); font-weight: 700;
+  font-size: clamp(12px, 1.6vw, 15px); letter-spacing: 0.5em;
+  color: var(--ink-soft); margin-left: clamp(18px, 3vw, 30px);
+}
+.logo-main {
+  font-family: var(--brush-font); font-weight: 400;
+  font-size: clamp(52px, 10.5vw, 88px);
+  letter-spacing: 0.12em; line-height: 1;
+}
+.logo-main .ch { display: inline; }
+.logo-saki {
+  display: block; text-align: end;
+  font-family: var(--gothic); font-weight: 500;
+  font-size: clamp(15px, 2vw, 20px); letter-spacing: 0.34em;
+  color: var(--accent);
+  margin-left: clamp(14px, 2vw, 22px);
+}
+.seal {
+  position: absolute; left: -30px; bottom: -6px;
+  writing-mode: vertical-rl;
+  font-family: var(--gothic); font-weight: 500;
+  font-size: 9px; letter-spacing: 0.24em; line-height: 1;
+  color: #f6f2e8; background: var(--accent);
+  padding: 7px 4px; border-radius: 2px;
+}
+
+/* ===== アニメーション初期状態（JSが駆動） ===== */
+.is-armed .logo-sub,
+.is-armed .logo-main .ch,
+.is-armed .logo-saki,
+.is-armed .seal { opacity: 0; }
+
+
+/* コントロール */
+.controls {
+  position: fixed; bottom: 28px; left: 50%; translate: -50% 0;
+  display: flex; gap: 12px; z-index: 50;
+}
+.controls button {
+  font-family: var(--gothic); font-size: 12px; letter-spacing: 0.24em;
+  padding: 11px 22px; cursor: pointer;
+  background: transparent; color: var(--ink);
+  border: 1px solid var(--ink); border-radius: 0;
+  transition: background 0.3s, color 0.3s;
+}
+.controls button:hover { background: var(--ink); color: var(--paper); }
+
+@media (prefers-reduced-motion: reduce) {
+  .is-armed .logo-sub, .is-armed .logo-main .ch,
+  .is-armed .logo-saki, .is-armed .seal { opacity: 1 !important; }
+}
+</style>
+</head>
+<body>
+
+<div class="stage">
+  <p class="mock-note">モック：筆書きエフェクト（本番未反映）</p>
+
+  <div class="hero-logo" id="logo">
+    <p class="logo-sub" id="sub">てがきの めいめいしょ</p>
+    <h1 class="logo-main" id="main"><span class="ch">ち</span><span class="ch">い</span><span class="ch">さ</span><span class="ch">な</span><span class="ch">手</span><span class="logo-saki" id="saki">Saki</span></h1>
+    <span class="seal" id="seal" aria-hidden="true">ちいさな手</span>
+  </div>
+</div>
+
+<div class="controls">
+  <button id="replay" type="button">もう一度</button>
+  <button id="slow" type="button">ゆっくり再生</button>
+</div>
+
+<script>
+const logo = document.getElementById('logo');
+const sub = document.getElementById('sub');
+const chars = [...document.querySelectorAll('.logo-main .ch')];
+const saki = document.getElementById('saki');
+const seal = document.getElementById('seal');
+
+const REDUCED = matchMedia('(prefers-reduced-motion: reduce)').matches;
+let anims = [];
+
+// タイムライン定数（rateで全体を伸縮）
+const T = {
+  subAt: 0, subDur: 420,
+  charAt: 280, charGap: 330, charDur: 500,
+  sakiDur: 360,
+  sealDur: 720,
+};
+
+function clearAnims() {
+  anims.forEach(a => a.cancel());
+  anims = [];
+}
+
+function play(rate = 1) {
+  if (REDUCED) return;
+  clearAnims();
+  logo.classList.add('is-armed');
+  const s = (ms) => ms * rate;
+  const inkEase = 'cubic-bezier(0.3, 0.7, 0.2, 1)';
+
+  // 1) サブタイトルがふわりと
+  anims.push(sub.animate(
+    [{ opacity: 0, transform: 'translateY(-6px)' }, { opacity: 1, transform: 'translateY(0)' }],
+    { delay: s(T.subAt), duration: s(T.subDur), easing: 'ease-out', fill: 'both' }
+  ));
+
+  // 2) 一文字ずつ、上から下へ筆でなぞるように現れる
+  chars.forEach((ch, i) => {
+    const delay = s(T.charAt + i * T.charGap);
+    anims.push(ch.animate(
+      [
+        { opacity: 1, clipPath: 'inset(0 0 100% 0)', filter: 'blur(5px)', transform: 'scale(1.035)' },
+        { opacity: 1, clipPath: 'inset(0 0 34% 0)', filter: 'blur(2px)', transform: 'scale(1.02)', offset: 0.45 },
+        { opacity: 1, clipPath: 'inset(0 0 0 0)', filter: 'blur(0px)', transform: 'scale(1)' },
+      ],
+      { delay, duration: s(T.charDur), easing: inkEase, fill: 'both' }
+    ));
+  });
+
+  const writeEnd = s(T.charAt + (chars.length - 1) * T.charGap + T.charDur);
+
+  // 3) Saki が横にすっと入る
+  const sakiAt = writeEnd - s(140);
+  anims.push(saki.animate(
+    [
+      { opacity: 1, clipPath: 'inset(0 0 100% 0)', filter: 'blur(3px)' },
+      { opacity: 1, clipPath: 'inset(0 0 0 0)', filter: 'blur(0px)' },
+    ],
+    { delay: sakiAt, duration: s(T.sakiDur), easing: inkEase, fill: 'both' }
+  ));
+
+  // 4) 落款が静かに沈み込むように押される
+  const sealAt = sakiAt + s(T.sakiDur) + s(120);
+  anims.push(seal.animate(
+    [
+      { opacity: 0, transform: 'scale(1.05)', filter: 'blur(1.5px)' },
+      { opacity: 0.9, transform: 'scale(1)', filter: 'blur(0px)' },
+    ],
+    { delay: sealAt, duration: s(T.sealDur), easing: 'cubic-bezier(0.25, 0.6, 0.2, 1)', fill: 'both' }
+  ));
+}
+
+// 検証用フック：全アニメーションを指定時刻へシーク
+window.__seek = (ms) => { anims.forEach(a => { a.pause(); a.currentTime = ms; }); };
+window.__animCount = () => anims.length;
+
+document.getElementById('replay').addEventListener('click', () => play(1));
+document.getElementById('slow').addEventListener('click', () => play(2.4));
+play(1);
+</script>
+</body>
+</html>

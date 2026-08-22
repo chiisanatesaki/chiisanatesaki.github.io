@@ -1,0 +1,27 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "meimeisho-site",
+      "runtimeExecutable": "python3",
+      "runtimeArgs": [
+        "-m",
+        "http.server",
+        "4173",
+        "--directory",
+        "/Users/ogiharataishi/AIの作業場/小さな手Saki"
+      ],
+      "port": 4173
+    },
+    {
+      "name": "meimeisho-site-alt",
+      "runtimeExecutable": "sh",
+      "runtimeArgs": [
+        "-c",
+        "python3 -m http.server \"${PORT:-4874}\" --directory '/Users/ogiharataishi/AIの作業場/小さな手Saki'"
+      ],
+      "port": 4874,
+      "autoPort": true
+    }
+  ]
+}
